@@ -1,0 +1,20 @@
+{
+  "name": "@thomazmz/mongoose-repository",
+  "version": "1.0.0",
+  "description": "A repository implementation to be used alongside Mongoose",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomazmz/mongoose-repository"
+  },
+  "bugs": {
+    "url": "https://github.com/thomazmz/mongoose-repository/issues"
+  },
+  "keywords": [
+    "mongodb",
+    "mongoose",
+    "repository"
+  ],
+  "author": "Thomaz Zandonotto",
+  "license": "MIT"
+}
