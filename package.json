@@ -2,7 +2,14 @@
   "name": "@thomazmz/mongoose-repository",
   "version": "1.0.0",
   "description": "A repository implementation to be used alongside Mongoose",
-  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "main": "lib/index",
+  "scripts": {
+    "build": "rimraf ./lib/* && tsc"
+  },
+  "files": [
+    "lib"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/thomazmz/mongoose-repository"
@@ -10,14 +17,19 @@
   "bugs": {
     "url": "https://github.com/thomazmz/mongoose-repository/issues"
   },
-  "homepage": {
-    "url": "https://github.com/thomazmz/mongoose-repository#readme"
-  },
   "keywords": [
     "mongodb",
     "mongoose",
     "repository"
   ],
   "author": "Thomaz Zandonotto",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "mongoose": "^6.3.5",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.7.4"
+  },
+  "peer-dependencies": {
+    "mongoose": "^6.3.5"
+  }
 }
