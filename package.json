@@ -1,15 +1,21 @@
 {
   "name": "@thomazmz/mongoose-repository",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A repository implementation to be used alongside Mongoose",
   "types": "lib/index.d.ts",
   "main": "lib/index",
-  "scripts": {
-    "build": "rimraf ./lib/* && tsc"
+  "author": "Thomaz Zandonotto",
+  "license": "MIT",
+  "engines": {
+    "node": "16"
   },
   "files": [
     "lib"
   ],
+  "scripts": {
+    "build": "rimraf ./lib/* && tsc",
+    "test": "jest --passWithNoTests --config ./jest.json"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/thomazmz/mongoose-repository"
@@ -22,11 +28,13 @@
     "mongoose",
     "repository"
   ],
-  "author": "Thomaz Zandonotto",
-  "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^28.1.2",
+    "@types/node": "^18.0.0",
+    "jest": "^28.1.1",
     "mongoose": "^6.3.5",
     "rimraf": "^3.0.2",
+    "ts-jest": "^28.0.5",
     "typescript": "^4.7.4"
   },
   "peer-dependencies": {
