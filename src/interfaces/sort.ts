@@ -1,6 +1,8 @@
+export type SortOrder = 'ascending' | 'descending'
+
 export type Sort<T> = {
-  index?: number,
-  limit?: number,
-  attribute: keyof T | (keyof T)[],
-  ordering?: 'ascending' | 'descending',
-}
+  offset?: number
+  limit?: number
+  property?: keyof T | (keyof T)[]
+  order?: SortOrder
+};

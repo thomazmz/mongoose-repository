@@ -1,4 +1,4 @@
-export type Range<T> = { 
+export type Range<T = any> = { 
   start?: T,
   end?: T
 }
