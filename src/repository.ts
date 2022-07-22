@@ -1,22 +1,26 @@
-import { model, Model, Document, Schema, SchemaDefinition, SchemaDefinitionType } from 'mongoose'
-import { RepositorySchema, Storable, StorableProperties, Repository, Query, Filter, Sort } from './interfaces'
-
-// function isQuery(potentialQuery: any) potentialQuery is Query {} 
+import * as mongoose from 'mongoose'
+import { isArray, isQuery, parseFilter } from './utils'
+import { Schema, Storable, StorableProperties, Repository, Query, Filter, SortOrder } from './interfaces'
 
 export abstract class MongooseRepository<S extends Storable<K>, K extends string | number = string> implements Repository<S, K> {
 
-  private _model?: Model<S>
+  private defaultSortLimit: number = 100
+  private defaultSortOffset: number = 0
+  private defaultSortProperty: string = 'createdAt'
+  private defaultSortOrder: SortOrder  = 'descending'
+
+  private _model?: mongoose.Model<mongoose.ObtainDocumentType<mongoose.ObtainDocumentType<mongoose.SchemaDefinition<mongoose.SchemaDefinitionType<S>>, S, "type">, S, "type">>
 
   constructor()
-  constructor(collection: string, properties: RepositorySchema<S, K>)
-  constructor(collection?: string, properties?: RepositorySchema<S, K>) {
+  constructor(collection: string, properties: Schema<S, K>)
+  constructor(collection?: string, properties?: Schema<S, K>) {
     if(collection && properties) {
       this.setModel(collection, properties)
     }
   }
 
-  protected setModel(collection: string, schema: RepositorySchema<S, K>): void {
-    const mongooseSchema = new Schema(schema as SchemaDefinition<SchemaDefinitionType<S>>, {
+  protected setModel(collection: string, schema: Schema<S, K>): void {
+    const mongooseSchema = new mongoose.Schema(schema as mongoose.SchemaDefinition<mongoose.SchemaDefinitionType<S>>, {
       _id: true,
       collection,
       timestamps: {
@@ -25,7 +29,7 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
       },
     })
 
-    this._model = model(collection, mongooseSchema)
+    this._model = mongoose.model(collection, mongooseSchema)
   }
 
   protected get model() {
@@ -36,18 +40,23 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
     return this._model
   }
 
-  async create(properties: StorableProperties<S, K>): Promise<S | undefined> {
+  public async create(properties: StorableProperties<S, K>): Promise<S> {
     const document = await this.model.create(properties)
     return this.convertDocumentToEntity(document)
   }
 
-  async get(ids: K[]): Promise<S[]>
-  async get(ids: K): Promise<S | undefined>
-  async get(filter: Filter<S>): Promise<S[]>
-  async get(query: Query<S>): Promise<S[]>
-  async get(querable: K | K[] | Query<S> | Filter<S>): Promise<S | S[] | undefined> {
+  public async get(): Promise<S[]>
+  public async get(ids: K[]): Promise<S[]>
+  public async get(ids: K): Promise<S | undefined>
+  public async get(filter: Filter<S>): Promise<S[]>
+  public async get(query: Query<S>): Promise<S[]>
+  public async get(querable?: K | K[] | Query<S> | Filter<S> ): Promise<S | S[] | undefined> {
 
-    if(Array.isArray(querable)) {
+    if(!querable) {
+      return this.getByFilter({})
+    }
+
+    if(isArray(querable)) {
       return this.getByIds(querable)
     }
 
@@ -55,7 +64,7 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
       return this.getById(querable)
     }
  
-    if(this.isQuery(querable)) {
+    if(isQuery<S>(querable)) {
       return this.getByQuery(querable)
     }
 
@@ -63,42 +72,48 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
   }
 
   public async getById(id: K): Promise<S | undefined> {
-    const document = await this.getDocumentById(id)
+    const document = (await this.model.findById(id)) ?? undefined
     if(document) return this.convertDocumentToEntity(document)
     return undefined
   }
 
   public async getByIds(ids: K[]): Promise<S[]> {
-    const documents = await this.getDocumentsByIds(ids)
-    return documents.map(document => this.convertDocumentToEntity(document))
+    const documents = await this.model.find({ id: { $in: [ids] }})
+    return this.convertDocumentsToEntities(documents)
+  }
+
+  public async getByFilter(filter: Filter<S>): Promise<S[]> {
+    const parsedFilter = parseFilter(filter)
+    const documents = await this.model.find(parsedFilter)
+    return this.convertDocumentsToEntities(documents)
   }
 
   public async getByQuery(query: Query<S>): Promise<S[]> {
-    throw Error('not implemented')
+    const { filter, sort } = query
+
+    const property = sort?.property ?? this.defaultSortProperty
+    const offset = sort?.offset ?? this.defaultSortOffset
+    const limit = sort?.limit ?? this.defaultSortLimit
+    const order = sort?.order ?? this.defaultSortOrder
+
+    const parsedFilter = parseFilter(filter)
+
+    const documents = await this.model
+      .find(parsedFilter)
+      .skip(offset)
+      .limit(limit)
+      .sort({ [property as string]: order })
+      .exec()
+
+    return this.convertDocumentsToEntities(documents)
   }
 
-  public async getByFilter(query: Filter<S>): Promise<S> {
-    throw Error('not implemented')
-  }
-
-  public async getBySort(query: Sort<S>): Promise<S> {
-    throw Error('not implemented')
-  }
-
-  protected async getDocumentById(id: K): Promise<Document<S> | undefined> {
-    return (await this.model.findById(id)) ?? undefined
-  }
-
-  protected async getDocumentsByIds(ids: K[]): Promise<Document<S>[]> {
-    return await this.model.find({ id: { $in: [ids] }})
-  }
-
-  protected convertDocumentToEntity(document: Document): S {
+  protected convertDocumentToEntity(document: mongoose.Document): S {
     const { __v, _id, ...object } = document.toObject()
-    return { ...object, id: _id } as S
+    return { ...object, id: _id.toString() } as S
   }
 
-  protected isQuery(potentialQuery: any): potentialQuery is Query<S> {
-    return potentialQuery.filter || potentialQuery.sort
+  protected convertDocumentsToEntities(documents: mongoose.Document[]): S[] {
+    return documents.map(document => this.convertDocumentToEntity(document))
   }
 }
