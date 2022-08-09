@@ -13,5 +13,9 @@ export const testSchema: Schema<TestEntity> = {
   stringProperty: {
     type: String,
     required: true,
+  },
+  booleanProperty: {
+    type: Boolean,
+    required: true,
   }
 }

@@ -40,14 +40,29 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
     return this._model
   }
 
-  public async create(properties: StorableProperties<S, K>): Promise<S> {
+  public async create(properties: StorableProperties<S, K>): Promise<S>
+  public async create(properties: StorableProperties<S, K>[]): Promise<S[]>
+  public async create(properties: StorableProperties<S, K> | StorableProperties<S, K>[]): Promise<S | S[]> {
+    if(isArray(properties)) {
+      return this.createMany(properties)
+    }
+    
+    return this.createOne(properties)
+  }
+
+  protected async createOne(properties: StorableProperties<S, K>): Promise<S> {
     const document = await this.model.create(properties)
     return this.convertDocumentToEntity(document)
   }
 
+  protected async createMany(properties: StorableProperties<S, K>[]): Promise<S[]> {
+    const documents = await this.model.insertMany(properties)
+    return this.convertDocumentsToEntities(documents)
+  }
+
   public async get(): Promise<S[]>
   public async get(ids: K[]): Promise<S[]>
-  public async get(ids: K): Promise<S | undefined>
+  public async get(id: K): Promise<S | undefined>
   public async get(filter: Filter<S>): Promise<S[]>
   public async get(query: Query<S>): Promise<S[]>
   public async get(querable?: K | K[] | Query<S> | Filter<S> ): Promise<S | S[] | undefined> {
@@ -71,24 +86,31 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
     return this.getByFilter(querable)
   }
 
-  public async getById(id: K): Promise<S | undefined> {
-    const document = (await this.model.findById(id)) ?? undefined
-    if(document) return this.convertDocumentToEntity(document)
-    return undefined
+  protected async getById(id: K): Promise<S | undefined> {
+    const isValidId = mongoose.Types.ObjectId.isValid(id)
+    
+    if(!isValidId) return undefined
+    
+    const document = await this.model.findById(id)
+    
+    if(!document) return undefined
+
+    return this.convertDocumentToEntity(document)
   }
 
-  public async getByIds(ids: K[]): Promise<S[]> {
-    const documents = await this.model.find({ id: { $in: [ids] }})
+  protected async getByIds(ids: K[]): Promise<S[]> {
+    const validatedIds = ids.filter(id => mongoose.Types.ObjectId.isValid(id))
+    const documents = await this.model.find({ _id: { $in: validatedIds }})
     return this.convertDocumentsToEntities(documents)
   }
 
-  public async getByFilter(filter: Filter<S>): Promise<S[]> {
+  protected async getByFilter(filter: Filter<S>): Promise<S[]> {
     const parsedFilter = parseFilter(filter)
     const documents = await this.model.find(parsedFilter)
     return this.convertDocumentsToEntities(documents)
   }
 
-  public async getByQuery(query: Query<S>): Promise<S[]> {
+  protected async getByQuery(query: Query<S>): Promise<S[]> {
     const { filter, sort } = query
 
     const property = sort?.property ?? this.defaultSortProperty

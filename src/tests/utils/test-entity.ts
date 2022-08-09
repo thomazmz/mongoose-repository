@@ -6,4 +6,5 @@ export type TestEntity = {
   dateProperty: Date,
   numberProperty: number,
   stringProperty: string,
+  booleanProperty: boolean,
 }
