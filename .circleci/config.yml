@@ -1,0 +1,80 @@
+version: 2.1
+
+restore-cache: &restore_cache
+  restore_cache:
+    keys:
+      - npm-packages-{{ checksum "package-lock.json" }}
+
+save-cache: &save_cache
+  save_cache:
+    key: npm-packages-{{ checksum "package-lock.json" }}
+    paths:
+      - ~/.cache/yarn
+
+fast-checkout: &fast-checkout
+  attach_workspace:
+    at: /home/circleci
+
+filter-development: &filter-development
+  branches:
+    ignore:
+      - /main/
+
+filter-main: &filter-main
+  branches:
+    only: /main/
+    ignore:
+      - /.*/
+
+executors: 
+  node:
+    docker:
+      - image: circleci/node
+      - image: circleci/mongo
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: admin
+
+jobs:
+  checkout:
+    executor: node
+    steps:
+      - checkout
+      - <<: *restore_cache
+      - run:
+          name: "Install deps"
+          command: npm ci
+      - <<: *save_cache
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
+            - project/node_modules
+  run-integration-tests:
+    executor: node
+    steps:
+      - <<: *fast-checkout
+      - run:
+          name: "run-integration-tests"
+          command: npm run test:integration
+          # environment:
+          #   NODE_OPTIONS: --max_old_space_size=8192
+
+workflows:
+  publish:
+    jobs:
+      - authorize-workflow:
+          type: approval
+          filters:
+            <<: *filter-development
+      - checkout:
+          filters:
+            <<: *filter-development
+          requires:
+            - authorize-workflow
+      - run-integration-tests:
+          name: run-integration-tests
+          requires:
+             - checkout
+          filters:
+            <<: *filter-development

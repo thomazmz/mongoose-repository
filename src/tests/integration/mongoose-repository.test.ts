@@ -2,9 +2,9 @@ import { StorableProperties } from 'interfaces'
 import { createTestContext, TestEntity, TestRepository } from '../utils'
 
 describe('MongooseRepository', () => {
-  const repository = new TestRepository()
+  const testRepository = new TestRepository()
 
-  const mongooseTestContext = createTestContext(repository.getModel())
+  const mongooseTestContext = createTestContext(testRepository.getModel())
 
   beforeAll(async () => {
     await mongooseTestContext.openConnection()
@@ -27,7 +27,7 @@ describe('MongooseRepository', () => {
       const dateProperty = new Date()
       const booleanProperty = true
 
-      const result = await repository.create({
+      const result = await testRepository.create({
         stringProperty,
         numberProperty,
         dateProperty,
@@ -52,7 +52,7 @@ describe('MongooseRepository', () => {
     })
     
     it('should persist test intances when an array of valid parameters are passed', async () => {
-      const results = await repository.create([
+      const results = await testRepository.create([
         {
           stringProperty: 'someStringProperty',
           numberProperty: 123,
@@ -84,7 +84,7 @@ describe('MongooseRepository', () => {
   describe('get', () => {
 
     const createTestCollectionEntites = (properties: StorableProperties<TestEntity>[] = []) => {
-      return repository.create([ ...properties,
+      return testRepository.create([ ...properties,
         {
           stringProperty: 'AAA',
           numberProperty: 123,
@@ -127,7 +127,7 @@ describe('MongooseRepository', () => {
     it('should return all entities when no parameter is passed', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get()
+      const result = await testRepository.get()
       
       expect(result.length).toBe(6)
 
@@ -175,7 +175,7 @@ describe('MongooseRepository', () => {
       const entities = await createTestCollectionEntites()
 
       await Promise.all(entities.map(async entity => {
-        const entityOnTheRepository = await repository.get(entity.id)
+        const entityOnTheRepository = await testRepository.get(entity.id)
         expect(entity).toEqual(entityOnTheRepository)
       }))
  
@@ -184,7 +184,7 @@ describe('MongooseRepository', () => {
     it('should return undefined when there is not a instance with specific id', async () => {
       await createTestCollectionEntites()
 
-      const entitiesOnTheRepository = await repository.get('invalidId')
+      const entitiesOnTheRepository = await testRepository.get('invalidId')
 
       expect(entitiesOnTheRepository).toBe(undefined)
     })
@@ -192,7 +192,7 @@ describe('MongooseRepository', () => {
     it('should return entities by ids when ids are passed as array', async () => {
       const entities = await createTestCollectionEntites()
 
-      const entitiesOnTheRepository = await repository.get([
+      const entitiesOnTheRepository = await testRepository.get([
         entities[0].id,
         entities[1].id,
       ])
@@ -208,7 +208,7 @@ describe('MongooseRepository', () => {
     it('should return entities by ids even when invalid ids are passed in array', async () => {
       const entities = await createTestCollectionEntites()
 
-      const entitiesOnTheRepository = await repository.get([
+      const entitiesOnTheRepository = await testRepository.get([
         'invalidId',
         entities[0].id,
         entities[1].id,
@@ -225,7 +225,7 @@ describe('MongooseRepository', () => {
     it('should return empty array when no entities matching id are found', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get([
+      const result = await testRepository.get([
         'someInvalidId',
         'anotherInvalidId',
       ])
@@ -238,7 +238,7 @@ describe('MongooseRepository', () => {
     it('should return entities by dateProperty when date is passed', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         dateProperty: new Date(30)
       })
 
@@ -263,7 +263,7 @@ describe('MongooseRepository', () => {
     it('should return entities by dateProperty when dates are passed as array', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         dateProperty: [
           new Date(20),
           new Date(30),
@@ -297,7 +297,7 @@ describe('MongooseRepository', () => {
     it('should return entities with dateProperty beginning on start key when range only constains start key', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         dateProperty: {
           start: new Date(30)
         }
@@ -336,7 +336,7 @@ describe('MongooseRepository', () => {
     it('should return entities with dateProperty up to end key when range only constains end key', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         dateProperty: {
           end: new Date(30)
         }
@@ -375,7 +375,7 @@ describe('MongooseRepository', () => {
     it('should return entities with dateProperty between start and end dates when range contains both start and end keys', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         dateProperty: {
           start: new Date(20),
           end: new Date(30),
@@ -409,7 +409,7 @@ describe('MongooseRepository', () => {
     it('should return empty array when no entities matching dateProperty are found', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         dateProperty: new Date(0)
       })
 
@@ -421,7 +421,7 @@ describe('MongooseRepository', () => {
     it('should return entities by numberProperty when number is passed', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         numberProperty: 234
       })
 
@@ -446,7 +446,7 @@ describe('MongooseRepository', () => {
     it('should return entities by numberProperty when numbers are passed as array', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         numberProperty: [
           123,
           234,
@@ -480,7 +480,7 @@ describe('MongooseRepository', () => {
     it('should return entities with numberProperty beggining on start key when range only constains start key', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         numberProperty: {
           start: 234
         }
@@ -525,7 +525,7 @@ describe('MongooseRepository', () => {
     it('should return entities with numberProperty up to end key when range only contains end key', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         numberProperty: {
           end: 234
         }
@@ -558,7 +558,7 @@ describe('MongooseRepository', () => {
     it('should return entities with numberProperty between start and end numbers when range contains both start and end keys', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         numberProperty: {
           start: 234,
           end: 345,
@@ -592,7 +592,7 @@ describe('MongooseRepository', () => {
     it('should return empty array when no entities matching numberProperty are found', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         numberProperty: 1
       })
 
@@ -604,7 +604,7 @@ describe('MongooseRepository', () => {
     it('should return entities by stringProperty when string is passed', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         stringProperty: 'AAA'
       })
 
@@ -629,7 +629,7 @@ describe('MongooseRepository', () => {
     it('should return entities by stringProperty when strings are passed as array', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         stringProperty: [
           'AAA',
           'EEE',
@@ -663,7 +663,7 @@ describe('MongooseRepository', () => {
     it('should return empty array when no entities matching stringProperty are found', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         stringProperty: 'ZZZ'
       })
 
@@ -675,7 +675,7 @@ describe('MongooseRepository', () => {
     it('should return entities matching booleanProperty when it is true', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         booleanProperty: true
       })
 
@@ -706,7 +706,7 @@ describe('MongooseRepository', () => {
     it('should return entities matching booleanProperty when it is false', async () => {
       await createTestCollectionEntites()
 
-      const result = await repository.get({
+      const result = await testRepository.get({
         booleanProperty: false
       })
 
