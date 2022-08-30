@@ -9,22 +9,17 @@ save-cache: &save_cache
   save_cache:
     key: npm-packages-{{ checksum "package-lock.json" }}
     paths:
-      - ~/.cache/yarn
+      - ~/.cache/npm
 
 fast-checkout: &fast-checkout
   attach_workspace:
     at: /home/circleci
 
-filter-development: &filter-development
-  branches:
-    ignore:
-      - /main/
-
-filter-main: &filter-main
+filter-publishable: &filter-publishable
+  tags: 
+    only: /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
   branches:
     only: /main/
-    ignore:
-      - /.*/
 
 executors: 
   node:
@@ -57,24 +52,35 @@ jobs:
       - run:
           name: "run-integration-tests"
           command: npm run test:integration
-          # environment:
-          #   NODE_OPTIONS: --max_old_space_size=8192
+  publish-to-npm:
+    executor: node
+    steps:
+      - <<: *fast-checkout
+      - run: 
+          name: "Build Mongoose Repository"
+          command: npm run build
+      - run:
+          name: "Authenticate on NPM registry"
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > /home/circleci/.npmrc
+      - run:
+          name: "Publish Package on NPM registry"
+          command: npm publish
 
 workflows:
   publish:
     jobs:
       - authorize-workflow:
           type: approval
-          filters:
-            <<: *filter-development
       - checkout:
-          filters:
-            <<: *filter-development
           requires:
             - authorize-workflow
       - run-integration-tests:
           name: run-integration-tests
           requires:
-             - checkout
+            - checkout
+      - publish-to-npm:
+          name: publish-to-npm
+          requires: 
+            - run-integration-tests
           filters:
-            <<: *filter-development
+            <<: *filter-publishable
