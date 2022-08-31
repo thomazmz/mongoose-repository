@@ -1,6 +1,6 @@
 {
   "name": "@thomazmz/mongoose-repository",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A repository implementation to be used alongside Mongoose",
   "types": "lib/index.d.ts",
   "main": "lib/index",
