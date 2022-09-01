@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import { isArray, isQuery, parseFilter } from './utils'
-import { Schema, Storable, StorableProperties, Repository, Query, Filter, SortOrder } from './interfaces'
+import { StorableSchema, Storable, StorableProperties, Repository, Query, Filter, SortOrder } from './interfaces'
 
 export abstract class MongooseRepository<S extends Storable<K>, K extends string | number = string> implements Repository<S, K> {
 
@@ -12,14 +12,14 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
   private _model?: mongoose.Model<mongoose.ObtainDocumentType<mongoose.ObtainDocumentType<mongoose.SchemaDefinition<mongoose.SchemaDefinitionType<S>>, S, "type">, S, "type">>
 
   constructor()
-  constructor(collection: string, properties: Schema<S, K>)
-  constructor(collection?: string, properties?: Schema<S, K>) {
+  constructor(collection: string, properties: StorableSchema<S, K>)
+  constructor(collection?: string, properties?: StorableSchema<S, K>) {
     if(collection && properties) {
       this.setModel(collection, properties)
     }
   }
 
-  protected setModel(collection: string, schema: Schema<S, K>): void {
+  protected setModel(collection: string, schema: StorableSchema<S, K>): void {
     const mongooseSchema = new mongoose.Schema(schema as mongoose.SchemaDefinition<mongoose.SchemaDefinitionType<S>>, {
       _id: true,
       collection,
