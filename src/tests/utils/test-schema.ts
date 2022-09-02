@@ -1,7 +1,7 @@
-import { Schema } from "interfaces";
+import { StorableSchema } from "interfaces";
 import { TestEntity } from "./test-entity";
 
-export const testSchema: Schema<TestEntity> = {
+export const testSchema: StorableSchema<TestEntity> = {
   dateProperty: {
     type: Date,
     required: true,

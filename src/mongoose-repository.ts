@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import { isArray, isQuery, parseFilter } from './utils'
-import { Schema, Storable, StorableProperties, Repository, Query, Filter, SortOrder } from './interfaces'
+import { StorableSchema, Storable, StorableProperties, Repository, Query, Filter, SortOrder } from './interfaces'
 
 export abstract class MongooseRepository<S extends Storable<K>, K extends string | number = string> implements Repository<S, K> {
 
@@ -12,14 +12,14 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
   private _model?: mongoose.Model<mongoose.ObtainDocumentType<mongoose.ObtainDocumentType<mongoose.SchemaDefinition<mongoose.SchemaDefinitionType<S>>, S, "type">, S, "type">>
 
   constructor()
-  constructor(collection: string, properties: Schema<S, K>)
-  constructor(collection?: string, properties?: Schema<S, K>) {
+  constructor(collection: string, properties: StorableSchema<S, K>)
+  constructor(collection?: string, properties?: StorableSchema<S, K>) {
     if(collection && properties) {
       this.setModel(collection, properties)
     }
   }
 
-  protected setModel(collection: string, schema: Schema<S, K>): void {
+  protected setModel(collection: string, schema: StorableSchema<S, K>): void {
     const mongooseSchema = new mongoose.Schema(schema as mongoose.SchemaDefinition<mongoose.SchemaDefinitionType<S>>, {
       _id: true,
       collection,
@@ -50,12 +50,12 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
     return this.createOne(properties)
   }
 
-  protected async createOne(properties: StorableProperties<S, K>): Promise<S> {
+  public async createOne(properties: StorableProperties<S, K>): Promise<S> {
     const document = await this.model.create(properties)
     return this.convertDocumentToEntity(document)
   }
 
-  protected async createMany(properties: StorableProperties<S, K>[]): Promise<S[]> {
+  public async createMany(properties: StorableProperties<S, K>[]): Promise<S[]> {
     const documents = await this.model.insertMany(properties)
     return this.convertDocumentsToEntities(documents)
   }
@@ -86,7 +86,7 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
     return this.getByFilter(querable)
   }
 
-  protected async getById(id: K): Promise<S | undefined> {
+  public async getById(id: K): Promise<S | undefined> {
     const isValidId = mongoose.Types.ObjectId.isValid(id)
     
     if(!isValidId) return undefined
@@ -98,19 +98,19 @@ export abstract class MongooseRepository<S extends Storable<K>, K extends string
     return this.convertDocumentToEntity(document)
   }
 
-  protected async getByIds(ids: K[]): Promise<S[]> {
+  public async getByIds(ids: K[]): Promise<S[]> {
     const validatedIds = ids.filter(id => mongoose.Types.ObjectId.isValid(id))
     const documents = await this.model.find({ _id: { $in: validatedIds }})
     return this.convertDocumentsToEntities(documents)
   }
 
-  protected async getByFilter(filter: Filter<S>): Promise<S[]> {
+  public async getByFilter(filter: Filter<S>): Promise<S[]> {
     const parsedFilter = parseFilter(filter)
     const documents = await this.model.find(parsedFilter)
     return this.convertDocumentsToEntities(documents)
   }
 
-  protected async getByQuery(query: Query<S>): Promise<S[]> {
+  public async getByQuery(query: Query<S>): Promise<S[]> {
     const { filter, sort } = query
 
     const property = sort?.property ?? this.defaultSortProperty
